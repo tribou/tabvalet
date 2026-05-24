@@ -5,14 +5,13 @@
   <title>Arc Sidebar</title>
   <style>
     :root {
-      --bg-panel: #16161a;
-      --bg-sidebar: #121214;
-      --border-color: rgba(255, 255, 255, 0.08);
-      --text-active: #ffffff;
-      --text-muted: #aeaeb2;
-      --hover-bg: rgba(255, 255, 255, 0.05);
-      --hover-bg-capsule: rgba(255, 255, 255, 0.08);
-      --accent: #0a84ff;
+      --bg-panel: hsl(240, 8%, 9%);
+      --bg-sidebar: hsl(240, 5%, 7%);
+      --border-color: hsla(0, 0%, 100%, 0.08);
+      --text-active: hsl(0, 0%, 100%);
+      --text-muted: hsl(240, 2%, 73%);
+      --hover-bg: hsla(0, 0%, 100%, 0.05);
+      --accent: hsl(210, 100%, 52%);
     }
 
     * {
@@ -150,7 +149,7 @@
       cursor: pointer;
     }
     .tab-row.navigated .favicon-wrapper:hover {
-      background: var(--hover-bg-capsule);
+      background: var(--hover-bg);
     }
 
     .favicon-img {
@@ -250,11 +249,11 @@
       <!-- Pinned items dynamically generated -->
     </div>
 
-    <!-- Marginless Separation Line -->
-    <div class="section-divider"></div>
-
     <!-- Temporary Header -->
     <div class="section-header" style="padding-top: 6px;">Temporary Tabs</div>
+
+    <!-- Marginless Separation Line -->
+    <div class="section-divider"></div>
     
     <!-- Temporary drop area -->
     <div class="drop-zone" id="temp-zone">
