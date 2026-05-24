@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Arc Vertical Tabs Sidebar",
+  "version": "1.0.0",
+  "description": "Arc-like vertical tabs sidebar in Google Chrome side panel.",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "tabs",
+    "contextMenus"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open Sidebar"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
