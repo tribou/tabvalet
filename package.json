@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
-  "dependencies": {
+  "devDependencies": {
     "canvas": "^3.2.3"
   }
 }
