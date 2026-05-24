@@ -1,12 +1,267 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
   <title>Arc Sidebar</title>
+  <style>
+    :root {
+      --bg-panel: #16161a;
+      --bg-sidebar: #121214;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-active: #ffffff;
+      --text-muted: #aeaeb2;
+      --hover-bg: rgba(255, 255, 255, 0.05);
+      --hover-bg-capsule: rgba(255, 255, 255, 0.08);
+      --accent: #0a84ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-sidebar);
+      color: var(--text-muted);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Search bar container */
+    .search-container {
+      padding: 10px 12px 6px 12px;
+      flex-shrink: 0;
+    }
+    .search-input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 6px 10px;
+      width: 100%;
+      color: var(--text-active);
+      font-size: 0.8rem;
+      outline: none;
+      transition: border 0.15s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+
+    /* Headers */
+    .section-header {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #636366;
+      letter-spacing: 0.06em;
+      padding: 8px 12px 2px 12px;
+      flex-shrink: 0;
+    }
+
+    /* Scrollable lists */
+    .lists-wrapper {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* FULL-BLEED DROPAREA ZONE */
+    .drop-zone {
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 0 8px;
+      transition: background 0.15s;
+      background: transparent;
+    }
+    .drop-zone.drag-over {
+      background: rgba(10, 132, 255, 0.06);
+    }
+
+    /* Tab row styling */
+    .tab-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      padding: 0 10px 0 0; /* ZERO left padding to keep click target flush */
+      border-radius: 6px;
+      background: transparent;
+      cursor: grab;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.15s;
+    }
+    .tab-row:active {
+      cursor: grabbing;
+    }
+    .tab-row:hover {
+      background: var(--hover-bg);
+    }
+    .tab-row.active {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      color: var(--text-active);
+    }
+    .tab-row.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 20%;
+      height: 60%;
+      width: 3px;
+      background: var(--accent);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .tab-info {
+      display: flex;
+      align-items: center;
+      height: 100%;
+      width: 82%;
+      overflow: hidden;
+    }
+
+    /* Clickable Favicon button zone */
+    .favicon-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 0 12px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .tab-row:not(.navigated) .favicon-wrapper {
+      padding-left: 10px;
+      cursor: grab;
+    }
+    .tab-row.navigated .favicon-wrapper {
+      border-right: none;
+      padding-left: 10px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    .tab-row.navigated .favicon-wrapper:hover {
+      background: var(--hover-bg-capsule);
+    }
+
+    .favicon-img {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+    }
+
+    /* Arc Slash */
+    .arc-slash {
+      color: rgba(255, 255, 255, 0.3);
+      font-weight: 400;
+      font-size: 0.85rem;
+      margin-right: 8px;
+      user-select: none;
+    }
+
+    .tab-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--text-muted);
+      transition: color 0.15s;
+    }
+    .tab-row:hover .tab-title, .tab-row.active .tab-title {
+      color: var(--text-active);
+    }
+
+    /* Close Button (Hidden unless hovered) */
+    .close-btn {
+      opacity: 0;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: opacity 0.15s, background 0.15s, color 0.15s;
+    }
+    .tab-row:hover .close-btn {
+      opacity: 0.7;
+    }
+    .close-btn:hover {
+      opacity: 1 !important;
+      background: rgba(255, 255, 255, 0.1);
+      color: #ff453a;
+    }
+
+    /* CONTINUOUS DIVIDER WITH ZERO VERTICAL GAPS */
+    .section-divider {
+      border-top: 1px solid var(--border-color);
+      margin: 0;
+      position: relative;
+      height: 1px;
+      background: var(--bg-sidebar);
+      flex-shrink: 0;
+    }
+    .section-divider::after {
+      content: 'DRAG ABOVE TO PIN';
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-sidebar);
+      padding: 0 10px;
+      font-size: 0.55rem;
+      color: rgba(255, 255, 255, 0.25);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    /* Custom scrollbar */
+    .lists-wrapper::-webkit-scrollbar {
+      width: 4px;
+    }
+    .lists-wrapper::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Arc Sidebar</h1>
-  <p>Vertical tabs sidebar is initializing...</p>
+  
+  <div class="search-container">
+    <input type="text" class="search-input" id="search-bar" placeholder="Search tabs..." />
+  </div>
+
+  <div class="lists-wrapper">
+    <!-- Pinned Header -->
+    <div class="section-header">Pinned Tabs</div>
+    
+    <!-- Pinned drop area -->
+    <div class="drop-zone" id="pinned-zone">
+      <!-- Pinned items dynamically generated -->
+    </div>
+
+    <!-- Marginless Separation Line -->
+    <div class="section-divider"></div>
+
+    <!-- Temporary Header -->
+    <div class="section-header" style="padding-top: 6px;">Temporary Tabs</div>
+    
+    <!-- Temporary drop area -->
+    <div class="drop-zone" id="temp-zone">
+      <!-- Temporary open items dynamically generated -->
+    </div>
+  </div>
+
+  <script src="sidepanel.js"></script>
 </body>
 </html>
