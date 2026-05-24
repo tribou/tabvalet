@@ -1,25 +1,47 @@
 let pinnedTabs = [];
 let openTabs = [];
 let activePinnedMap = {};
+let currentWindowId = null;
 
 // Initialize on page load
 document.addEventListener("DOMContentLoaded", () => {
-  loadPinnedTabs();
-  syncOpenTabs();
-  setupDragAndDrop();
-  
-  // Set up listeners for browser actions
-  chrome.tabs.onCreated.addListener(syncOpenTabs);
-  chrome.tabs.onRemoved.addListener(syncOpenTabs);
-  chrome.tabs.onUpdated.addListener(syncOpenTabs);
-  chrome.tabs.onActivated.addListener(syncOpenTabs);
-  
-  // Watch storage updates to keep Pinned section up to date
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === "local" && changes.pinned_tabs) {
-      pinnedTabs = changes.pinned_tabs.newValue || [];
-      renderPinnedTabs();
-    }
+  chrome.windows.getCurrent((win) => {
+    if (!win) return;
+    currentWindowId = win.id;
+    
+    loadPinnedTabs();
+    syncOpenTabs();
+    setupDragAndDrop();
+    
+    // Set up window-isolated listeners
+    chrome.tabs.onCreated.addListener((tab) => {
+      if (tab.windowId === currentWindowId) syncOpenTabs();
+    });
+    
+    chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+      if (removeInfo.windowId === currentWindowId) syncOpenTabs();
+    });
+    
+    chrome.tabs.onActivated.addListener((activeInfo) => {
+      if (activeInfo.windowId === currentWindowId) syncOpenTabs();
+    });
+    
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      if (tab.windowId === currentWindowId) {
+        // Only trigger sync on meaningful, complete, or visual updates
+        if (changeInfo.status === "complete" || changeInfo.title || changeInfo.favIconUrl || changeInfo.url) {
+          syncOpenTabs();
+        }
+      }
+    });
+
+    // Watch storage updates to keep Pinned section up to date
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === "local" && changes.pinned_tabs) {
+        pinnedTabs = changes.pinned_tabs.newValue || [];
+        renderPinnedTabs();
+      }
+    });
   });
 
   // Query search bar
@@ -36,17 +58,16 @@ function loadPinnedTabs() {
 
 // Synchronize open tabs representing the current window
 function syncOpenTabs() {
-  chrome.windows.getCurrent((win) => {
-    if (!win) return;
-    chrome.tabs.query({ windowId: win.id }, (tabs) => {
-      openTabs = tabs;
-      
-      // Pull the active map from background worker
-      chrome.runtime.sendMessage({ action: "getActiveMap" }, (response) => {
-        activePinnedMap = response ? response.activePinnedTabs : {};
-        renderTemporaryTabs();
-        renderPinnedTabs(); // Re-render pinned tabs to ensure active indicators match
-      });
+  if (currentWindowId === null) return;
+  chrome.tabs.query({ windowId: currentWindowId }, (tabs) => {
+    openTabs = tabs;
+    
+    // Pull the active map from background worker
+    chrome.runtime.sendMessage({ action: "getActiveMap" }, (response) => {
+      activePinnedMap = response ? response.activePinnedTabs : {};
+      renderTemporaryTabs();
+      renderPinnedTabs();
+      filterTabs(); // Re-apply current search filter!
     });
   });
 }
@@ -60,18 +81,18 @@ function renderPinnedTabs() {
   const sorted = [...pinnedTabs].sort((a, b) => a.order - b.order);
   
   sorted.forEach(tab => {
-    // Check if there is an active mapped tab in the current window
     let isActive = false;
     let mappedTabId = null;
     
     for (const [tId, pId] of Object.entries(activePinnedMap)) {
       if (pId === tab.id) {
-        mappedTabId = parseInt(tId);
-        const openTabExists = openTabs.find(o => o.id === mappedTabId);
+        const tIdNum = parseInt(tId);
+        const openTabExists = openTabs.find(o => o.id === tIdNum);
         if (openTabExists) {
+          mappedTabId = tIdNum;
           isActive = openTabExists.active;
+          break; // Only break when matched to an open tab in the current window
         }
-        break;
       }
     }
     
@@ -322,6 +343,9 @@ function resetPinnedTab(pinnedTab, tabId) {
   chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
     if (tabId) {
       chrome.tabs.update(tabId, { url: pinnedTab.pinnedUrl }, () => {
+        if (chrome.runtime.lastError) {
+          console.warn("Could not update tab: tab may have been closed abruptly.");
+        }
         syncOpenTabs();
       });
     } else {
