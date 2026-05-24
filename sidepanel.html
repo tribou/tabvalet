@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <title>Arc Sidebar</title>
@@ -124,7 +124,8 @@
       display: flex;
       align-items: center;
       height: 100%;
-      width: 82%;
+      flex: 1;
+      min-width: 0;
       overflow: hidden;
     }
 
@@ -183,6 +184,8 @@
     /* Close Button (Hidden unless hovered) */
     .close-btn {
       opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
       background: transparent;
       border: none;
       color: var(--text-muted);
@@ -194,6 +197,8 @@
     }
     .tab-row:hover .close-btn {
       opacity: 0.7;
+      visibility: visible;
+      pointer-events: auto;
     }
     .close-btn:hover {
       opacity: 1 !important;
@@ -237,7 +242,7 @@
 <body>
   
   <div class="search-container">
-    <input type="text" class="search-input" id="search-bar" placeholder="Search tabs..." />
+    <input type="text" class="search-input" id="search-bar" placeholder="Search tabs..." aria-label="Search tabs" />
   </div>
 
   <div class="lists-wrapper">
