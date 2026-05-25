@@ -77,10 +77,13 @@
       opacity: 0.4;
     }
 
-    /* Target insertion line above the row */
-    .tab-row.drag-before {
-      position: relative;
+    /* Target insertion line above/below the row to avoid clipping glow */
+    .tab-row.drag-before,
+    .tab-row.drag-after {
+      overflow: visible;
     }
+
+    /* Target insertion line above the row */
     .tab-row.drag-before::before {
       content: '';
       position: absolute;
@@ -95,9 +98,6 @@
     }
 
     /* Target insertion line below the row */
-    .tab-row.drag-after {
-      position: relative;
-    }
     .tab-row.drag-after::after {
       content: '';
       position: absolute;
