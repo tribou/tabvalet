@@ -575,11 +575,6 @@ function unpinTabAtPosition(pinnedTabId, targetTabId, position) {
           return;
         }
 
-        let targetIndex = targetTab.index;
-        if (position === "after") {
-          targetIndex += 1;
-        }
-
         let mappedTabId = null;
         for (const [tId, pId] of Object.entries(activePinnedMap)) {
           if (pId === pinnedTabId) {
@@ -588,12 +583,27 @@ function unpinTabAtPosition(pinnedTabId, targetTabId, position) {
           }
         }
 
+        let targetIndex;
         if (mappedTabId) {
+          const draggedTab = openTabs.find(o => o.id === mappedTabId);
+          if (draggedTab) {
+            targetIndex = calculateTempTabTargetIndex(draggedTab, targetTab, position);
+          } else {
+            targetIndex = targetTab.index;
+            if (position === "after") {
+              targetIndex += 1;
+            }
+          }
+
           chrome.tabs.move(mappedTabId, { windowId: currentWindowId, index: targetIndex }, () => {
             syncOpenTabs();
           });
         } else {
           // Open new tab at target index in window for inactive pinned tab
+          targetIndex = targetTab.index;
+          if (position === "after") {
+            targetIndex += 1;
+          }
           chrome.tabs.create({ windowId: currentWindowId, url: pinnedTab.pinnedUrl, index: targetIndex }, () => {
             syncOpenTabs();
           });
@@ -666,3 +676,4 @@ function clearDragClasses() {
 // Expose functions on the global window object for E2E tests
 window.reorderPinnedTab = reorderPinnedTab;
 window.reorderTempTab = reorderTempTab;
+window.unpinTabAtPosition = unpinTabAtPosition;

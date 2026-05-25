@@ -90,5 +90,53 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     // 4. Verify class is removed
     await expect(pinnedZone).not.toHaveClass(/drag-over-empty/);
   });
+
+  test('unpins an active pinned tab and drops it at the top of normal tabs', async ({ sidepanelPage }) => {
+    // 1. Setup a pinned tab
+    await sidepanelPage.evaluate(async () => {
+      await chrome.storage.local.set({
+        pinned_tabs: [
+          { id: 'pin-1', pinnedUrl: 'https://example.com/pinned', title: 'Pinned Tab', order: 0 }
+        ]
+      });
+    });
+
+    await sidepanelPage.reload();
+
+    // 2. Open two tabs: one for the pinned tab, and one normal tab
+    await sidepanelPage.evaluate(async () => {
+      const tab1 = await new Promise((resolve) => {
+        chrome.tabs.create({ url: 'https://example.com/pinned' }, resolve);
+      });
+      
+      const tab2 = await new Promise((resolve) => {
+        chrome.tabs.create({ url: 'https://example.com/normal' }, resolve);
+      });
+
+      // Force a sync wait
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      // Trigger the unpin and drop at the top spot of the normal section (before tab2)
+      await window.unpinTabAtPosition('pin-1', tab2.id, 'before');
+
+      // Force a sync wait
+      await new Promise(resolve => setTimeout(resolve, 800));
+    });
+
+    // 3. Verify the final physical order of tabs in the window.
+    const tabUrls = await sidepanelPage.evaluate(async () => {
+      const tabs = await new Promise((resolve) => {
+        chrome.tabs.query({ currentWindow: true }, resolve);
+      });
+      const relevantTabs = tabs.filter(t => t.url.includes('example.com'));
+      relevantTabs.sort((a, b) => a.index - b.index);
+      return relevantTabs.map(t => t.url);
+    });
+
+    expect(tabUrls).toEqual([
+      'https://example.com/pinned',
+      'https://example.com/normal'
+    ]);
+  });
 });
 
