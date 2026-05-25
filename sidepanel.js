@@ -162,6 +162,14 @@ function renderPinnedTabs() {
       if (row.classList.contains("dragging")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
+
+      // Clear drag indicators on other rows to ensure only a single target line renders
+      document.querySelectorAll(".tab-row").forEach(el => {
+        if (el !== row) {
+          el.classList.remove("drag-before", "drag-after");
+        }
+      });
+
       const rect = row.getBoundingClientRect();
       const relY = e.clientY - rect.top;
       if (relY < rect.height / 2) {
@@ -262,6 +270,14 @@ function renderTemporaryTabs() {
       if (row.classList.contains("dragging")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
+
+      // Clear drag indicators on other rows to ensure only a single target line renders
+      document.querySelectorAll(".tab-row").forEach(el => {
+        if (el !== row) {
+          el.classList.remove("drag-before", "drag-after");
+        }
+      });
+
       const rect = row.getBoundingClientRect();
       const relY = e.clientY - rect.top;
       if (relY < rect.height / 2) {
