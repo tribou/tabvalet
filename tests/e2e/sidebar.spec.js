@@ -73,23 +73,7 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     expect(storageState[1].order).toBe(1);
   });
 
-  test('displays drag-over-empty class when dragging a tab over empty pinned section', async ({ sidepanelPage }) => {
-    const pinnedZone = await sidepanelPage.locator('#pinned-zone');
-    await expect(pinnedZone).toBeEmpty();
-    await expect(pinnedZone).not.toHaveClass(/drag-over-empty/);
 
-    // 1. Dispatch dragover on #pinned-section
-    await sidepanelPage.dispatchEvent('#pinned-section', 'dragover');
-
-    // 2. Verify the drag-over-empty class is present
-    await expect(pinnedZone).toHaveClass(/drag-over-empty/);
-
-    // 3. Dispatch dragleave on #pinned-section
-    await sidepanelPage.dispatchEvent('#pinned-section', 'dragleave');
-
-    // 4. Verify class is removed
-    await expect(pinnedZone).not.toHaveClass(/drag-over-empty/);
-  });
 
   test('unpins an active pinned tab and drops it at the top of normal tabs', async ({ sidepanelPage }) => {
     // 1. Setup a pinned tab
@@ -240,11 +224,27 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
   });
 
   test('displays unified drop indicator when dragging over empty pinned section', async ({ sidepanelPage }) => {
+    sidepanelPage.on('console', msg => console.log('BROWSER LOG:', msg.text()));
+
     const indicator = await sidepanelPage.locator('#drop-indicator');
     await expect(indicator).not.toHaveClass(/visible/);
 
     // 1. Dispatch dragover on #pinned-section
-    await sidepanelPage.dispatchEvent('#pinned-section', 'dragover');
+    await sidepanelPage.evaluate(() => {
+      const section = document.getElementById('pinned-section');
+      const event = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true
+      });
+      Object.defineProperty(event, 'dataTransfer', {
+        value: {
+          dropEffect: '',
+          setData: () => {},
+          getData: () => ''
+        }
+      });
+      section.dispatchEvent(event);
+    });
 
     // 2. Verify unified drop indicator becomes visible
     await expect(indicator).toHaveClass(/visible/);

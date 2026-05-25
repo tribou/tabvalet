@@ -259,68 +259,81 @@ function setupDragAndDrop() {
   if (listsWrapper) {
     listsWrapper.addEventListener("dragover", (e) => {
       const targetRow = e.target.closest(".tab-row");
-      if (!targetRow) {
-        // If not hovering over a tab row, make sure we clean up any row indicator classes
-        document.querySelectorAll(".tab-row").forEach(el => {
-          el.classList.remove("drag-before", "drag-after");
-        });
+      let dropZone = e.target.closest(".drop-zone");
+      if (!dropZone) {
+        const section = e.target.closest(".section-container");
+        if (section) {
+          dropZone = section.querySelector(".drop-zone");
+        }
+      }
+      
+      const indicator = document.getElementById("drop-indicator");
+      if (!indicator) return;
+
+      // Reset stale empty target zone mapping immediately
+      delete indicator.dataset.targetZone;
+
+      if (!targetRow && !dropZone) {
+        indicator.classList.remove("visible");
         return;
       }
-
-      if (targetRow.classList.contains("dragging")) return;
 
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
 
-      // Clear indicators on all other rows to ensure only a single target line renders
-      document.querySelectorAll(".tab-row").forEach(el => {
-        if (el !== targetRow) {
-          el.classList.remove("drag-before", "drag-after");
-        }
-      });
+      const wrapperRect = listsWrapper.getBoundingClientRect();
 
-      const rect = targetRow.getBoundingClientRect();
-      const relY = e.clientY - rect.top;
-      if (relY < rect.height / 2) {
-        targetRow.classList.add("drag-before");
-        targetRow.classList.remove("drag-after");
-      } else {
-        targetRow.classList.add("drag-after");
-        targetRow.classList.remove("drag-before");
+      // 1. Handle drag over empty section zones
+      if (dropZone && dropZone.children.length === 0) {
+        const zoneRect = dropZone.getBoundingClientRect();
+        const relativeTop = zoneRect.top - wrapperRect.top + listsWrapper.scrollTop;
+        
+        indicator.style.top = `${relativeTop}px`;
+        indicator.dataset.targetZone = dropZone.id;
+        indicator.classList.add("visible");
+        return;
+      }
+
+      // 2. Handle drag over populated tab rows
+      if (targetRow) {
+        if (targetRow.classList.contains("dragging")) return;
+
+        const rowRect = targetRow.getBoundingClientRect();
+        const relativeTop = rowRect.top - wrapperRect.top + listsWrapper.scrollTop;
+
+        const relY = e.clientY - rowRect.top;
+        const isTopHalf = relY < rowRect.height / 2;
+
+        // Position indicator exactly in the center of the 2px gap (above or below row)
+        const indicatorTop = isTopHalf 
+          ? relativeTop - 1 
+          : relativeTop + rowRect.height + 1;
+
+        indicator.style.top = `${indicatorTop}px`;
+        indicator.dataset.targetId = targetRow.id;
+        indicator.dataset.position = isTopHalf ? "before" : "after";
+        indicator.classList.add("visible");
       }
     });
 
     listsWrapper.addEventListener("dragleave", (e) => {
-      // Clear drag indicators only when the cursor leaves the lists-wrapper entirely
       if (!listsWrapper.contains(e.relatedTarget)) {
-        document.querySelectorAll(".tab-row").forEach(el => {
-          el.classList.remove("drag-before", "drag-after");
-        });
+        const indicator = document.getElementById("drop-indicator");
+        if (indicator) {
+          indicator.classList.remove("visible");
+        }
       }
     });
   }
 
   // Container dragover & drop listeners for general section zones (e.g. dropping at empty/end)
   [pinnedSection, tempSection].forEach(section => {
-    const isPinned = section.id === "pinned-section";
-
     section.addEventListener("dragover", (e) => {
       e.preventDefault();
-      if (isPinned && pinnedTabs.length === 0) {
-        const pinnedZone = document.getElementById("pinned-zone");
-        if (pinnedZone) {
-          pinnedZone.classList.add("drag-over-empty");
-        }
-      }
     });
 
     section.addEventListener("dragleave", () => {
-      if (isPinned && pinnedTabs.length === 0) {
-        const pinnedZone = document.getElementById("pinned-zone");
-        if (pinnedZone) {
-          pinnedZone.classList.remove("drag-over-empty");
-        }
-      }
+      // Handled cleanly by unified listsWrapper dragover and dragleave
     });
 
     section.addEventListener("drop", (e) => {
@@ -656,11 +669,16 @@ function resetPinnedTab(pinnedTab, tabId) {
 
 function clearDragClasses() {
   document.querySelectorAll(".tab-row").forEach(el => {
-    el.classList.remove("dragging", "drag-before", "drag-after");
+    el.classList.remove("dragging");
   });
   const pinnedZone = document.getElementById("pinned-zone");
   if (pinnedZone) {
     pinnedZone.classList.remove("drag-over-empty");
+  }
+  
+  const indicator = document.getElementById("drop-indicator");
+  if (indicator) {
+    indicator.classList.remove("visible");
   }
 }
 
