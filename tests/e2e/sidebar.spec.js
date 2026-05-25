@@ -230,5 +230,67 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
 
     expect(beforeHeight).toBe('2px');
   });
+
+  test('retains drop indicator on child element transitions (prevents flickering)', async ({ sidepanelPage }) => {
+    // 1. Setup a pinned tab
+    await sidepanelPage.evaluate(async () => {
+      await chrome.storage.local.set({
+        pinned_tabs: [
+          { id: 'pin-flicker', pinnedUrl: 'https://example.com/flicker', title: 'Flicker Pinned', order: 0 }
+        ]
+      });
+    });
+
+    await sidepanelPage.reload();
+
+    // 2. Mock open tabs sync
+    await sidepanelPage.evaluate(async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    });
+
+    const pinnedRow = await sidepanelPage.locator('#pinned-pin-flicker');
+    await expect(pinnedRow).toBeVisible();
+
+    // 3. Dispatch dragover on the active pinned tab row
+    await sidepanelPage.evaluate(() => {
+      const row = document.getElementById('pinned-pin-flicker');
+      const rect = row.getBoundingClientRect();
+      const midY = rect.top + rect.height / 4; // upper half
+      
+      const event = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        clientY: midY
+      });
+      
+      Object.defineProperty(event, 'dataTransfer', {
+        value: {
+          dropEffect: '',
+          setData: () => {},
+          getData: () => ''
+        }
+      });
+      
+      row.dispatchEvent(event);
+    });
+
+    // 4. Verify class 'drag-before' is added
+    await expect(pinnedRow).toHaveClass(/drag-before/);
+
+    // 5. Dispatch dragleave on the row (simulating child element entry or transition)
+    await sidepanelPage.evaluate(() => {
+      const row = document.getElementById('pinned-pin-flicker');
+      const titleSpan = row.querySelector('.tab-title');
+      const event = new DragEvent('dragleave', {
+        bubbles: true,
+        cancelable: true,
+        relatedTarget: titleSpan
+      });
+      row.dispatchEvent(event);
+    });
+
+    // 6. Verify class 'drag-before' is retained (should not be stripped by dragleave on child elements)
+    await expect(pinnedRow).toHaveClass(/drag-before/);
+  });
 });
 

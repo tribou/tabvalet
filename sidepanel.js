@@ -127,33 +127,6 @@ function renderPinnedTabs() {
       setTimeout(() => row.classList.add("dragging"), 0);
     });
     
-    row.addEventListener("dragover", (e) => {
-      if (row.classList.contains("dragging")) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-
-      // Clear drag indicators on other rows to ensure only a single target line renders
-      document.querySelectorAll(".tab-row").forEach(el => {
-        if (el !== row) {
-          el.classList.remove("drag-before", "drag-after");
-        }
-      });
-
-      const rect = row.getBoundingClientRect();
-      const relY = e.clientY - rect.top;
-      if (relY < rect.height / 2) {
-        row.classList.add("drag-before");
-        row.classList.remove("drag-after");
-      } else {
-        row.classList.add("drag-after");
-        row.classList.remove("drag-before");
-      }
-    });
-
-    row.addEventListener("dragleave", () => {
-      row.classList.remove("drag-before", "drag-after");
-    });
-
     row.addEventListener("dragend", () => {
       clearDragClasses();
     });
@@ -235,33 +208,6 @@ function renderTemporaryTabs() {
       setTimeout(() => row.classList.add("dragging"), 0);
     });
 
-    row.addEventListener("dragover", (e) => {
-      if (row.classList.contains("dragging")) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-
-      // Clear drag indicators on other rows to ensure only a single target line renders
-      document.querySelectorAll(".tab-row").forEach(el => {
-        if (el !== row) {
-          el.classList.remove("drag-before", "drag-after");
-        }
-      });
-
-      const rect = row.getBoundingClientRect();
-      const relY = e.clientY - rect.top;
-      if (relY < rect.height / 2) {
-        row.classList.add("drag-before");
-        row.classList.remove("drag-after");
-      } else {
-        row.classList.add("drag-after");
-        row.classList.remove("drag-before");
-      }
-    });
-
-    row.addEventListener("dragleave", () => {
-      row.classList.remove("drag-before", "drag-after");
-    });
-
     row.addEventListener("dragend", () => {
       clearDragClasses();
     });
@@ -308,6 +254,51 @@ function renderTemporaryTabs() {
 function setupDragAndDrop() {
   const pinnedSection = document.getElementById("pinned-section");
   const tempSection = document.getElementById("temp-section");
+  const listsWrapper = document.querySelector(".lists-wrapper");
+
+  if (listsWrapper) {
+    listsWrapper.addEventListener("dragover", (e) => {
+      const targetRow = e.target.closest(".tab-row");
+      if (!targetRow) {
+        // If not hovering over a tab row, make sure we clean up any row indicator classes
+        document.querySelectorAll(".tab-row").forEach(el => {
+          el.classList.remove("drag-before", "drag-after");
+        });
+        return;
+      }
+
+      if (targetRow.classList.contains("dragging")) return;
+
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+
+      // Clear indicators on all other rows to ensure only a single target line renders
+      document.querySelectorAll(".tab-row").forEach(el => {
+        if (el !== targetRow) {
+          el.classList.remove("drag-before", "drag-after");
+        }
+      });
+
+      const rect = targetRow.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      if (relY < rect.height / 2) {
+        targetRow.classList.add("drag-before");
+        targetRow.classList.remove("drag-after");
+      } else {
+        targetRow.classList.add("drag-after");
+        targetRow.classList.remove("drag-before");
+      }
+    });
+
+    listsWrapper.addEventListener("dragleave", (e) => {
+      // Clear drag indicators only when the cursor leaves the lists-wrapper entirely
+      if (!listsWrapper.contains(e.relatedTarget)) {
+        document.querySelectorAll(".tab-row").forEach(el => {
+          el.classList.remove("drag-before", "drag-after");
+        });
+      }
+    });
+  }
 
   // Container dragover & drop listeners for general section zones (e.g. dropping at empty/end)
   [pinnedSection, tempSection].forEach(section => {
