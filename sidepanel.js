@@ -1,3 +1,6 @@
+import { calculateTabMappings } from './src/logic/tab-manager.js';
+import { normalizeUrl } from './src/utils/url.js';
+
 let pinnedTabs = [];
 let openTabs = [];
 let activePinnedMap = {};
@@ -64,54 +67,20 @@ function syncOpenTabs() {
       activePinnedMap = response ? response.activePinnedTabs : {};
       
       // Auto-map open tabs to pinned tabs by matching URLs if not already mapped
-      let mapUpdated = false;
-      const mappedPinnedIds = [];
+      const nextMap = calculateTabMappings(openTabs, pinnedTabs, activePinnedMap);
       
-      // 1. Identify which pinned tabs are already mapped to open tabs in the current window
-      for (const [tId, pId] of Object.entries(activePinnedMap)) {
-        const tIdNum = parseInt(tId);
-        if (openTabs.some(o => o.id === tIdNum)) {
-          mappedPinnedIds.push(pId);
+      // Persist any newly added mappings to service worker
+      for (const [tId, pId] of Object.entries(nextMap)) {
+        if (activePinnedMap[tId] === undefined) {
+          chrome.runtime.sendMessage({
+            action: "mapActiveTab",
+            tabId: parseInt(tId),
+            pinnedTabId: pId
+          });
         }
       }
       
-      // 2. Scan unmapped open tabs and match them to unmapped pinned tabs by URL
-      openTabs.forEach(openTab => {
-        const openTabIdStr = openTab.id.toString();
-        if (activePinnedMap[openTabIdStr] === undefined) {
-          const match = pinnedTabs.find(pTab => {
-            // Must not be already mapped to an open tab in this window
-            if (mappedPinnedIds.includes(pTab.id)) return false;
-            
-            const openUrl = openTab.url;
-            const pinnedUrl = pTab.pinnedUrl;
-            const activeUrl = pTab.activeUrl;
-            
-            if (!openUrl || !pinnedUrl) return false;
-            
-            // Normalize URLs by removing query parameters and hashes for comparison
-            const normOpen = openUrl.split('?')[0].split('#')[0].replace(/\/$/, "");
-            const normPinned = pinnedUrl.split('?')[0].split('#')[0].replace(/\/$/, "");
-            const normActive = activeUrl ? activeUrl.split('?')[0].split('#')[0].replace(/\/$/, "") : null;
-            
-            return normOpen === normPinned || normOpen === normActive;
-          });
-          
-          if (match) {
-            activePinnedMap[openTabIdStr] = match.id;
-            mappedPinnedIds.push(match.id);
-            
-            // Persist the mapping to the background worker session state
-            chrome.runtime.sendMessage({
-              action: "mapActiveTab",
-              tabId: openTab.id,
-              pinnedTabId: match.id
-            });
-            
-            mapUpdated = true;
-          }
-        }
-      });
+      activePinnedMap = nextMap;
       
       renderTemporaryTabs();
       renderPinnedTabs();
