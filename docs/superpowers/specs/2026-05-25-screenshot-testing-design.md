@@ -31,6 +31,13 @@ We will update the `test:e2e` command to invoke Playwright inside the official L
 
 ---
 
+### Repository Configuration
+
+#### [MODIFY] [CLAUDE.md](../../CLAUDE.md)
+We will add a new critical rule (Rule 6) to ensure that all markdown links within the repository use relative paths instead of absolute URLs.
+
+---
+
 ### E2E Visual Testing Specification
 
 #### [NEW] [visual.spec.js](../../../tests/e2e/visual.spec.js)

@@ -29,6 +29,7 @@ Use these standard commands to test and manage this extension:
 3. **After making any changes, run tests**: Always verify changes by running `npm test` and `npm run test:e2e` before concluding.
 4. **Bug fixes require TDD tests**: Any bug fix must be preceded by a failing unit or integration test demonstrating the issue. See [docs/TESTING.md](docs/TESTING.md) for full TDD testing policies.
 5. **Creating new skills**: If package or workflow skills are needed, use the `superpowers:writing-skills` skill.
+6. **Relative links in Markdown**: Always use relative file paths instead of absolute URLs (like `file:///...`) in all Markdown files inside this repository to ensure cross-machine compatibility.
 
 ---
 
