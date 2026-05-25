@@ -153,7 +153,31 @@ function renderPinnedTabs() {
     
     // Set up dragging listeners
     row.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", tab.id);
+      e.dataTransfer.setData("text/plain", `pinned-${tab.id}`);
+      e.dataTransfer.effectAllowed = "move";
+      setTimeout(() => row.classList.add("dragging"), 0);
+    });
+    
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rect = row.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      if (relY < rect.height / 2) {
+        row.classList.add("drag-before");
+        row.classList.remove("drag-after");
+      } else {
+        row.classList.add("drag-after");
+        row.classList.remove("drag-before");
+      }
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-before", "drag-after");
+    });
+
+    row.addEventListener("dragend", () => {
+      clearDragClasses();
     });
     
     // Tab Activation Click handler
@@ -229,6 +253,30 @@ function renderTemporaryTabs() {
     
     row.addEventListener("dragstart", (e) => {
       e.dataTransfer.setData("text/plain", `temp-${tab.id}`);
+      e.dataTransfer.effectAllowed = "move";
+      setTimeout(() => row.classList.add("dragging"), 0);
+    });
+
+    row.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rect = row.getBoundingClientRect();
+      const relY = e.clientY - rect.top;
+      if (relY < rect.height / 2) {
+        row.classList.add("drag-before");
+        row.classList.remove("drag-after");
+      } else {
+        row.classList.add("drag-after");
+        row.classList.remove("drag-before");
+      }
+    });
+
+    row.addEventListener("dragleave", () => {
+      row.classList.remove("drag-before", "drag-after");
+    });
+
+    row.addEventListener("dragend", () => {
+      clearDragClasses();
     });
 
     row.addEventListener("click", () => {
@@ -319,7 +367,8 @@ function setupDragAndDrop() {
       } else {
         // Dragging a pinned tab into Temp zone -> Unpin it
         if (!id.startsWith("temp-")) {
-          unpinTab(id);
+          const cleanId = id.replace("pinned-", "");
+          unpinTab(cleanId);
         }
       }
     });
@@ -426,5 +475,11 @@ function resetPinnedTab(pinnedTab, tabId) {
     } else {
       syncOpenTabs();
     }
+  });
+}
+
+function clearDragClasses() {
+  document.querySelectorAll(".tab-row").forEach(el => {
+    el.classList.remove("dragging", "drag-before", "drag-after");
   });
 }
