@@ -169,5 +169,66 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     expect(tab2Index).not.toBe(-1);
     expect(tab1Index).toBe(tab2Index - 1); // Pinned tab (tab1) is immediately before normal tab (tab2) in the UI
   });
+
+  test('displays drag-before drop indicator when dragging over an active pinned tab row', async ({ sidepanelPage }) => {
+    // 1. Setup a pinned tab that will be active
+    await sidepanelPage.evaluate(async () => {
+      await chrome.storage.local.set({
+        pinned_tabs: [
+          { id: 'pin-active', pinnedUrl: 'https://example.com/active', title: 'Active Pinned', order: 0 }
+        ]
+      });
+    });
+
+    await sidepanelPage.reload();
+
+    // 2. Mock active pinned tab in open tabs
+    await sidepanelPage.evaluate(async () => {
+      const tab = await new Promise((resolve) => {
+        chrome.tabs.create({ url: 'https://example.com/active', active: true }, resolve);
+      });
+      // Force a sync wait to let sidebar render the active pinned tab
+      await new Promise(resolve => setTimeout(resolve, 800));
+    });
+
+    // 3. Verify it is rendered as active in the UI
+    const pinnedRow = await sidepanelPage.locator('#pinned-pin-active');
+    await expect(pinnedRow).toHaveClass(/active/);
+
+    // 4. Dispatch dragover on the active pinned tab row using evaluate to properly mock dataTransfer
+    await sidepanelPage.evaluate(() => {
+      const row = document.getElementById('pinned-pin-active');
+      const rect = row.getBoundingClientRect();
+      const midY = rect.top + rect.height / 4; // upper half
+      
+      const event = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        clientY: midY
+      });
+      
+      Object.defineProperty(event, 'dataTransfer', {
+        value: {
+          dropEffect: '',
+          setData: () => {},
+          getData: () => ''
+        }
+      });
+      
+      row.dispatchEvent(event);
+    });
+
+    // 5. Verify the class 'drag-before' is added to the row
+    await expect(pinnedRow).toHaveClass(/drag-before/);
+
+    // 6. Verify the computed style height of the row's ::before pseudo-element is '2px'
+    const beforeHeight = await sidepanelPage.evaluate(() => {
+      const row = document.getElementById('pinned-pin-active');
+      const style = window.getComputedStyle(row, '::before');
+      return style.height;
+    });
+
+    expect(beforeHeight).toBe('2px');
+  });
 });
 
