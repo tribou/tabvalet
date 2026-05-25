@@ -5,8 +5,7 @@
  */
 export function normalizeUrl(url) {
   if (!url) return '';
-  let clean = url.replace(/^(https?:\/\/)?(www\.)?/, '');
+  let clean = url.toLowerCase().replace(/^((https?:)?\/\/)?(www\.)?/, '');
   clean = clean.split('#')[0].split('?')[0];
-  clean = clean.replace(/\/$/, '');
-  return clean.toLowerCase();
+  return clean.replace(/\/$/, '');
 }
