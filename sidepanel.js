@@ -159,6 +159,7 @@ function renderPinnedTabs() {
     });
     
     row.addEventListener("dragover", (e) => {
+      if (row.classList.contains("dragging")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const rect = row.getBoundingClientRect();
@@ -258,6 +259,7 @@ function renderTemporaryTabs() {
     });
 
     row.addEventListener("dragover", (e) => {
+      if (row.classList.contains("dragging")) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       const rect = row.getBoundingClientRect();
@@ -331,32 +333,15 @@ function setupDragAndDrop() {
   ];
   
   sections.forEach(({ container, isPinned }) => {
-    container.dragCounter = 0;
-    
-    container.addEventListener("dragenter", (e) => {
-      e.preventDefault();
-      container.dragCounter++;
-      container.classList.add("drag-over");
-    });
-    
     container.addEventListener("dragover", (e) => {
       e.preventDefault();
     });
     
-    container.addEventListener("dragleave", () => {
-      container.dragCounter--;
-      if (container.dragCounter <= 0) {
-        container.dragCounter = 0;
-        container.classList.remove("drag-over");
-      }
-    });
-    
     container.addEventListener("drop", (e) => {
       e.preventDefault();
-      container.dragCounter = 0;
-      container.classList.remove("drag-over");
       
       const id = e.dataTransfer.getData("text/plain");
+      if (!id) return;
       
       if (isPinned) {
         // Dragging a temp tab into Pinned zone -> Pin it
@@ -376,10 +361,7 @@ function setupDragAndDrop() {
   
   // Document-level safety net to clean up any stuck drag states
   document.addEventListener("dragend", () => {
-    sections.forEach(({ container }) => {
-      container.dragCounter = 0;
-      container.classList.remove("drag-over");
-    });
+    clearDragClasses();
   });
 }
 
