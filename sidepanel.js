@@ -326,89 +326,73 @@ function setupDragAndDrop() {
     });
   }
 
-  // Container dragover & drop listeners for general section zones (e.g. dropping at empty/end)
+  // Container dragover listeners for general section zones
   [pinnedSection, tempSection].forEach(section => {
     section.addEventListener("dragover", (e) => {
       e.preventDefault();
     });
+  });
 
-    section.addEventListener("dragleave", () => {
-      // Handled cleanly by unified listsWrapper dragover and dragleave
-    });
+  // Delegate drop listeners to dynamic drop indicators
+  document.addEventListener("drop", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    section.addEventListener("drop", (e) => {
-      // Avoid handling the drop if it occurred on a specific tab row (let document drop handler handle it)
-      if (e.target.closest(".tab-row")) return;
+    const indicator = document.getElementById("drop-indicator");
+    if (!indicator || !indicator.classList.contains("visible")) return;
 
-      // Prevent event bubbling if a specific tab drop handled it already
-      if (e.defaultPrevented) return;
-      e.preventDefault();
-      
-      const dragId = e.dataTransfer.getData("text/plain");
-      if (!dragId || (!dragId.startsWith("temp-") && !dragId.startsWith("pinned-"))) return;
-      clearDragClasses();
+    const dragId = e.dataTransfer.getData("text/plain");
+    if (!dragId || (!dragId.startsWith("temp-") && !dragId.startsWith("pinned-"))) return;
 
+    const targetZone = indicator.dataset.targetZone;
+    const targetIdAttr = indicator.dataset.targetId;
+    const relativePosition = indicator.dataset.position;
+
+    clearDragClasses();
+
+    // 1. Resolve Drops into Empty Zones
+    if (targetZone) {
+      const isPinned = targetZone === "pinned-zone";
       if (isPinned) {
-        // Append to end of Pinned section
         if (dragId.startsWith("temp-")) {
           const tabId = parseInt(dragId.replace("temp-", ""));
-          pinOpenTab(tabId, pinnedTabs.length);
+          pinOpenTab(tabId, 0); // Drop as the first pinned item
         } else {
           const pinnedId = dragId.replace("pinned-", "");
           reorderPinnedTab(pinnedId, null, "after");
         }
       } else {
-        // Append to end of Normal section
         if (!dragId.startsWith("temp-")) {
           const pinnedId = dragId.replace("pinned-", "");
-          unpinTab(pinnedId, openTabs.length);
+          unpinTab(pinnedId, 0); // Drop as the first normal item
         } else {
           const tabId = parseInt(dragId.replace("temp-", ""));
-          chrome.tabs.move(tabId, { windowId: currentWindowId, index: -1 });
+          chrome.tabs.move(tabId, { windowId: currentWindowId, index: 0 });
         }
       }
-    });
-  });
+      return;
+    }
 
-  // Delegate drop listeners to dynamic tab rows
-  document.addEventListener("drop", (e) => {
-    const targetRow = e.target.closest(".tab-row");
-    if (!targetRow) return;
+    // 2. Resolve Standard Row Drops
+    if (!targetIdAttr || !relativePosition) return;
 
-    e.preventDefault();
-    e.stopPropagation();
-
-    const dragId = e.dataTransfer.getData("text/plain");
-    if (!dragId || (!dragId.startsWith("temp-") && !dragId.startsWith("pinned-"))) return;
-    
-    const isDragBefore = targetRow.classList.contains("drag-before");
-    const relativePosition = isDragBefore ? "before" : "after";
-    
-    clearDragClasses();
-
-    const isTargetPinned = targetRow.id.startsWith("pinned-");
-    const targetId = targetRow.id.replace("pinned-", "").replace("temp-", "");
+    const isTargetPinned = targetIdAttr.startsWith("pinned-");
+    const targetId = targetIdAttr.replace("pinned-", "").replace("temp-", "");
 
     if (isTargetPinned) {
-      // Target is in the Pinned section
       if (dragId.startsWith("temp-")) {
-        // Cross-section Temp -> Pinned drop at precise position
         const tabId = parseInt(dragId.replace("temp-", ""));
         pinOpenTabAtPosition(tabId, targetId, relativePosition);
       } else {
-        // Pinned -> Pinned reorder at precise position
         const pinnedId = dragId.replace("pinned-", "");
         reorderPinnedTab(pinnedId, targetId, relativePosition);
       }
     } else {
-      // Target is in the Temp section
       const targetTabId = parseInt(targetId);
       if (!dragId.startsWith("temp-")) {
-        // Cross-section Pinned -> Temp drop at precise position
         const pinnedId = dragId.replace("pinned-", "");
         unpinTabAtPosition(pinnedId, targetTabId, relativePosition);
       } else {
-        // Temp -> Temp reorder at precise position
         const tabId = parseInt(dragId.replace("temp-", ""));
         reorderTempTab(tabId, targetTabId, relativePosition);
       }
