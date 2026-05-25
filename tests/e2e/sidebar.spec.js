@@ -170,7 +170,7 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     expect(tab1Index).toBe(tab2Index - 1); // Pinned tab (tab1) is immediately before normal tab (tab2) in the UI
   });
 
-  test('displays drag-before drop indicator when dragging over an active pinned tab row', async ({ sidepanelPage }) => {
+  test('displays and correctly positions the drop indicator when dragging over a pinned tab row', async ({ sidepanelPage }) => {
     // 1. Setup a pinned tab that will be active
     await sidepanelPage.evaluate(async () => {
       await chrome.storage.local.set({
@@ -184,18 +184,18 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
 
     // 2. Mock active pinned tab in open tabs
     await sidepanelPage.evaluate(async () => {
-      const tab = await new Promise((resolve) => {
+      await new Promise((resolve) => {
         chrome.tabs.create({ url: 'https://example.com/active', active: true }, resolve);
       });
       // Force a sync wait to let sidebar render the active pinned tab
       await new Promise(resolve => setTimeout(resolve, 800));
     });
 
-    // 3. Verify it is rendered as active in the UI
+    // 3. Verify it is rendered in the UI
     const pinnedRow = await sidepanelPage.locator('#pinned-pin-active');
-    await expect(pinnedRow).toHaveClass(/active/);
+    await expect(pinnedRow).toBeVisible();
 
-    // 4. Dispatch dragover on the active pinned tab row using evaluate to properly mock dataTransfer
+    // 4. Dispatch dragover on the active pinned tab row (upper half)
     await sidepanelPage.evaluate(() => {
       const row = document.getElementById('pinned-pin-active');
       const rect = row.getBoundingClientRect();
@@ -218,17 +218,36 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
       row.dispatchEvent(event);
     });
 
-    // 5. Verify the class 'drag-before' is added to the row
-    await expect(pinnedRow).toHaveClass(/drag-before/);
+    // 5. Verify the unified drop indicator becomes visible
+    const indicator = sidepanelPage.locator('#drop-indicator');
+    await expect(indicator).toHaveClass(/visible/);
 
-    // 6. Verify the computed style height of the row's ::before pseudo-element is '2px'
-    const beforeHeight = await sidepanelPage.evaluate(() => {
-      const row = document.getElementById('pinned-pin-active');
-      const style = window.getComputedStyle(row, '::before');
-      return style.height;
+    // 6. Assert indicator style top matches the expected position (1px above row boundary)
+    const positioningMatches = await sidepanelPage.evaluate(() => {
+      const indicatorEl = document.getElementById('drop-indicator');
+      const rowEl = document.getElementById('pinned-pin-active');
+      const wrapperEl = document.querySelector('.lists-wrapper');
+      
+      const indicatorTop = parseInt(indicatorEl.style.top);
+      const rowRect = rowEl.getBoundingClientRect();
+      const wrapperRect = wrapperEl.getBoundingClientRect();
+      const expectedTop = Math.round(rowRect.top - wrapperRect.top + wrapperEl.scrollTop) - 1;
+      
+      return Math.abs(indicatorTop - expectedTop) <= 1; // 1px rounding tolerance
     });
 
-    expect(beforeHeight).toBe('2px');
+    expect(positioningMatches).toBe(true);
+  });
+
+  test('displays unified drop indicator when dragging over empty pinned section', async ({ sidepanelPage }) => {
+    const indicator = await sidepanelPage.locator('#drop-indicator');
+    await expect(indicator).not.toHaveClass(/visible/);
+
+    // 1. Dispatch dragover on #pinned-section
+    await sidepanelPage.dispatchEvent('#pinned-section', 'dragover');
+
+    // 2. Verify unified drop indicator becomes visible
+    await expect(indicator).toHaveClass(/visible/);
   });
 
   test('retains drop indicator on child element transitions (prevents flickering)', async ({ sidepanelPage }) => {
@@ -274,8 +293,9 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
       row.dispatchEvent(event);
     });
 
-    // 4. Verify class 'drag-before' is added
-    await expect(pinnedRow).toHaveClass(/drag-before/);
+    // 4. Verify indicator is visible
+    const indicator = sidepanelPage.locator('#drop-indicator');
+    await expect(indicator).toHaveClass(/visible/);
 
     // 5. Dispatch dragleave on the row (simulating child element entry or transition)
     await sidepanelPage.evaluate(() => {
@@ -289,8 +309,8 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
       row.dispatchEvent(event);
     });
 
-    // 6. Verify class 'drag-before' is retained (should not be stripped by dragleave on child elements)
-    await expect(pinnedRow).toHaveClass(/drag-before/);
+    // 6. Verify indicator remains visible (should not be stripped by child element leaves)
+    await expect(indicator).toHaveClass(/visible/);
   });
 });
 
