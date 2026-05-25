@@ -26,4 +26,11 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     await expect(pinnedRow).toBeVisible();
     await expect(pinnedRow).toContainText('Example Pinned');
   });
+
+  test('exposes reordering functions on global window object for E2E tests', async ({ sidepanelPage }) => {
+    const areFunctionsExposed = await sidepanelPage.evaluate(() => {
+      return typeof window.reorderPinnedTab === 'function' && typeof window.reorderTempTab === 'function';
+    });
+    expect(areFunctionsExposed).toBe(true);
+  });
 });

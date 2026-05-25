@@ -1,4 +1,4 @@
-import { calculateTabMappings } from './src/logic/tab-manager.js';
+import { calculateTabMappings, reorderPinnedTabsList, calculateTempTabTargetIndex } from './src/logic/tab-manager.js';
 import { normalizeUrl } from './src/utils/url.js';
 
 let pinnedTabs = [];
@@ -475,26 +475,7 @@ function unpinTab(pinnedTabId, targetIndex) {
 function reorderPinnedTab(draggedId, targetId, position) {
   if (draggedId === targetId) return;
 
-  const draggedIndex = pinnedTabs.findIndex(t => t.id === draggedId);
-  if (draggedIndex === -1) return;
-
-  const draggedTab = pinnedTabs[draggedIndex];
-  pinnedTabs.splice(draggedIndex, 1);
-
-  let targetIndex = pinnedTabs.length;
-  if (targetId) {
-    const idx = pinnedTabs.findIndex(t => t.id === targetId);
-    if (idx !== -1) {
-      targetIndex = position === "before" ? idx : idx + 1;
-    }
-  }
-
-  pinnedTabs.splice(targetIndex, 0, draggedTab);
-
-  // Reassign order
-  pinnedTabs.forEach((tab, index) => {
-    tab.order = index;
-  });
+  pinnedTabs = reorderPinnedTabsList(pinnedTabs, draggedId, targetId, position);
 
   chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
     syncOpenTabs();
@@ -548,12 +529,7 @@ function reorderTempTab(draggedTabId, targetTabId, position) {
 
   if (draggedTabId === targetTabId) return; // Prevent self-drop API calls
 
-  let targetIndex = targetTab.index;
-  if (draggedTab.index < targetTab.index) {
-    targetIndex = (position === "before") ? targetTab.index - 1 : targetTab.index;
-  } else {
-    targetIndex = (position === "before") ? targetTab.index : targetTab.index + 1;
-  }
+  const targetIndex = calculateTempTabTargetIndex(draggedTab, targetTab, position);
 
   chrome.tabs.move(draggedTabId, { windowId: currentWindowId, index: targetIndex }, () => {
     syncOpenTabs();
@@ -667,3 +643,7 @@ function clearDragClasses() {
     el.classList.remove("dragging", "drag-before", "drag-after");
   });
 }
+
+// Expose functions on the global window object for E2E tests
+window.reorderPinnedTab = reorderPinnedTab;
+window.reorderTempTab = reorderTempTab;
