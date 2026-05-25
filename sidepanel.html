@@ -31,25 +31,7 @@
       user-select: none;
     }
 
-    /* Search bar container */
-    .search-container {
-      padding: 10px 12px 6px 12px;
-      flex-shrink: 0;
-    }
-    .search-input {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 6px 10px;
-      width: 100%;
-      color: var(--text-active);
-      font-size: 0.8rem;
-      outline: none;
-      transition: border 0.15s;
-    }
-    .search-input:focus {
-      border-color: var(--accent);
-    }
+
 
     /* Headers */
     .section-header {
@@ -60,6 +42,7 @@
       letter-spacing: 0.06em;
       padding: 8px 12px 2px 12px;
       flex-shrink: 0;
+      transition: color 0.15s ease;
     }
 
     /* Scrollable lists */
@@ -72,16 +55,27 @@
 
     /* FULL-BLEED DROPAREA ZONE */
     .drop-zone {
-      min-height: 80px;
       display: flex;
       flex-direction: column;
       gap: 2px;
-      padding: 0 8px;
-      transition: background 0.15s;
+      padding: 0 4px;
       background: transparent;
     }
-    .drop-zone.drag-over {
-      background: rgba(10, 132, 255, 0.06);
+
+    /* Section Container and Drop Target */
+    .section-container {
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.15s ease;
+      border-radius: 10px;
+      margin: 4px 2px;
+      padding-bottom: 6px;
+    }
+    .section-container.drag-over {
+      background: rgba(10, 132, 255, 0.08);
+    }
+    .section-container.drag-over .section-header {
+      color: var(--accent);
     }
 
     /* Tab row styling */
@@ -91,15 +85,15 @@
       justify-content: space-between;
       height: 38px;
       padding: 0 10px 0 0; /* ZERO left padding to keep click target flush */
-      border-radius: 6px;
+      border-radius: 8px;
       background: transparent;
-      cursor: grab;
+      cursor: default;
       position: relative;
       overflow: hidden;
       transition: background 0.15s;
     }
     .tab-row:active {
-      cursor: grabbing;
+      cursor: default;
     }
     .tab-row:hover {
       background: var(--hover-bg);
@@ -137,17 +131,17 @@
       height: 100%;
       padding: 0 12px;
       transition: background 0.15s;
-      cursor: pointer;
+      cursor: default;
     }
     .tab-row:not(.navigated) .favicon-wrapper {
       padding-left: 10px;
-      cursor: grab;
+      cursor: default;
     }
     .tab-row.navigated .favicon-wrapper {
       border-right: none;
       padding-left: 10px;
       margin-right: 8px;
-      cursor: pointer;
+      cursor: default;
     }
     .tab-row.navigated .favicon-wrapper:hover {
       background: var(--hover-bg);
@@ -189,10 +183,15 @@
       background: transparent;
       border: none;
       color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.85rem;
-      padding: 2px 6px;
+      cursor: default;
+      width: 24px;
+      height: 24px;
+      padding: 0;
       border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
       transition: opacity 0.15s, background 0.15s, color 0.15s;
     }
     .tab-row:hover .close-btn {
@@ -202,31 +201,44 @@
     }
     .close-btn:hover {
       opacity: 1 !important;
-      background: rgba(255, 255, 255, 0.1);
-      color: #ff453a;
+      background: rgba(255, 255, 255, 0.12);
     }
 
-    /* CONTINUOUS DIVIDER WITH ZERO VERTICAL GAPS */
+    /* CONTINUOUS DIVIDER WITH COMFORTABLE HOVER TARGET AND MARGINS */
     .section-divider {
-      border-top: 1px solid var(--border-color);
-      margin: 0;
       position: relative;
-      height: 1px;
-      background: var(--bg-sidebar);
+      height: 16px; /* High-height invisible hover box */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 12px; /* Margin on left and right for style, slight margin top/bottom */
       flex-shrink: 0;
+      cursor: default;
+    }
+    .section-divider::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border-color);
+      pointer-events: none;
     }
     .section-divider::after {
       content: 'DRAG ABOVE TO PIN';
       position: absolute;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
       background: var(--bg-sidebar);
       padding: 0 10px;
       font-size: 0.55rem;
       color: rgba(255, 255, 255, 0.25);
       font-weight: 700;
       letter-spacing: 0.08em;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+    }
+    .section-divider:hover::after {
+      opacity: 1;
     }
 
     /* Custom scrollbar */
@@ -241,28 +253,27 @@
 </head>
 <body>
   
-  <div class="search-container">
-    <input type="text" class="search-input" id="search-bar" placeholder="Search tabs..." aria-label="Search tabs" />
-  </div>
+
 
   <div class="lists-wrapper">
-    <!-- Pinned Header -->
-    <div class="section-header">Pinned Tabs</div>
-    
-    <!-- Pinned drop area -->
-    <div class="drop-zone" id="pinned-zone">
-      <!-- Pinned items dynamically generated -->
+    <div class="section-container" id="pinned-section">
+      <!-- Pinned Header -->
+      <div class="section-header">Pinned Tabs</div>
+      
+      <!-- Pinned drop area -->
+      <div class="drop-zone" id="pinned-zone">
+        <!-- Pinned items dynamically generated -->
+      </div>
     </div>
-
-    <!-- Temporary Header -->
-    <div class="section-header" style="padding-top: 6px;">Temporary Tabs</div>
 
     <!-- Marginless Separation Line -->
     <div class="section-divider"></div>
-    
-    <!-- Temporary drop area -->
-    <div class="drop-zone" id="temp-zone">
-      <!-- Temporary open items dynamically generated -->
+
+    <div class="section-container" id="temp-section">
+      <!-- Temporary drop area -->
+      <div class="drop-zone" id="temp-zone">
+        <!-- Temporary open items dynamically generated -->
+      </div>
     </div>
   </div>
 

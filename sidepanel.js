@@ -43,9 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
-
-  // Query search bar
-  document.getElementById("search-bar").addEventListener("input", filterTabs);
 });
 
 // Load pinned tabs from storage
@@ -67,7 +64,6 @@ function syncOpenTabs() {
       activePinnedMap = response ? response.activePinnedTabs : {};
       renderTemporaryTabs();
       renderPinnedTabs();
-      filterTabs(); // Re-apply current search filter!
     });
   });
 }
@@ -152,7 +148,7 @@ function renderPinnedTabs() {
     // Close / Unpin Button
     const closeBtn = document.createElement("button");
     closeBtn.className = "close-btn";
-    closeBtn.innerText = "×";
+    closeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
     closeBtn.title = "Unpin Tab";
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -210,7 +206,7 @@ function renderTemporaryTabs() {
     // Close Button (hidden unless hovered, managed by CSS)
     const closeBtn = document.createElement("button");
     closeBtn.className = "close-btn";
-    closeBtn.innerText = "×";
+    closeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
     closeBtn.title = "Close Tab";
     closeBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -224,26 +220,46 @@ function renderTemporaryTabs() {
 
 // Drag & Drop event bindings
 function setupDragAndDrop() {
-  const zones = [document.getElementById("pinned-zone"), document.getElementById("temp-zone")];
+  const sections = [
+    {
+      container: document.getElementById("pinned-section"),
+      isPinned: true
+    },
+    {
+      container: document.getElementById("temp-section"),
+      isPinned: false
+    }
+  ];
   
-  zones.forEach(zone => {
-    zone.addEventListener("dragover", (e) => {
+  sections.forEach(({ container, isPinned }) => {
+    container.dragCounter = 0;
+    
+    container.addEventListener("dragenter", (e) => {
       e.preventDefault();
-      zone.classList.add("drag-over");
+      container.dragCounter++;
+      container.classList.add("drag-over");
     });
     
-    zone.addEventListener("dragleave", () => {
-      zone.classList.remove("drag-over");
+    container.addEventListener("dragover", (e) => {
+      e.preventDefault();
     });
     
-    zone.addEventListener("drop", (e) => {
+    container.addEventListener("dragleave", () => {
+      container.dragCounter--;
+      if (container.dragCounter <= 0) {
+        container.dragCounter = 0;
+        container.classList.remove("drag-over");
+      }
+    });
+    
+    container.addEventListener("drop", (e) => {
       e.preventDefault();
-      zone.classList.remove("drag-over");
+      container.dragCounter = 0;
+      container.classList.remove("drag-over");
       
       const id = e.dataTransfer.getData("text/plain");
-      const isPinnedZone = zone.id === "pinned-zone";
       
-      if (isPinnedZone) {
+      if (isPinned) {
         // Dragging a temp tab into Pinned zone -> Pin it
         if (id.startsWith("temp-")) {
           const tabId = parseInt(id.replace("temp-", ""));
@@ -255,6 +271,14 @@ function setupDragAndDrop() {
           unpinTab(id);
         }
       }
+    });
+  });
+  
+  // Document-level safety net to clean up any stuck drag states
+  document.addEventListener("dragend", () => {
+    sections.forEach(({ container }) => {
+      container.dragCounter = 0;
+      container.classList.remove("drag-over");
     });
   });
 }
@@ -350,23 +374,6 @@ function resetPinnedTab(pinnedTab, tabId) {
       });
     } else {
       syncOpenTabs();
-    }
-  });
-}
-
-// Live query filter list
-function filterTabs() {
-  const query = document.getElementById("search-bar").value.toLowerCase();
-  const rows = document.querySelectorAll(".tab-row");
-  
-  rows.forEach(row => {
-    const titleSpan = row.querySelector(".tab-title");
-    if (!titleSpan) return;
-    const title = titleSpan.innerText.toLowerCase();
-    if (title.includes(query)) {
-      row.style.display = "flex";
-    } else {
-      row.style.display = "none";
     }
   });
 }
