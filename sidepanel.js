@@ -321,44 +321,96 @@ function renderTemporaryTabs() {
 
 // Drag & Drop event bindings
 function setupDragAndDrop() {
-  const sections = [
-    {
-      container: document.getElementById("pinned-section"),
-      isPinned: true
-    },
-    {
-      container: document.getElementById("temp-section"),
-      isPinned: false
-    }
-  ];
-  
-  sections.forEach(({ container, isPinned }) => {
-    container.addEventListener("dragover", (e) => {
+  const pinnedSection = document.getElementById("pinned-section");
+  const tempSection = document.getElementById("temp-section");
+
+  // Container dragover & drop listeners for general section zones (e.g. dropping at empty/end)
+  [pinnedSection, tempSection].forEach(section => {
+    const isPinned = section.id === "pinned-section";
+
+    section.addEventListener("dragover", (e) => {
       e.preventDefault();
     });
-    
-    container.addEventListener("drop", (e) => {
+
+    section.addEventListener("drop", (e) => {
+      // Avoid handling the drop if it occurred on a specific tab row (let document drop handler handle it)
+      if (e.target.closest(".tab-row")) return;
+
+      // Prevent event bubbling if a specific tab drop handled it already
+      if (e.defaultPrevented) return;
       e.preventDefault();
       
-      const id = e.dataTransfer.getData("text/plain");
-      if (!id) return;
-      
+      const dragId = e.dataTransfer.getData("text/plain");
+      if (!dragId) return;
+      clearDragClasses();
+
       if (isPinned) {
-        // Dragging a temp tab into Pinned zone -> Pin it
-        if (id.startsWith("temp-")) {
-          const tabId = parseInt(id.replace("temp-", ""));
-          pinOpenTab(tabId);
+        // Append to end of Pinned section
+        if (dragId.startsWith("temp-")) {
+          const tabId = parseInt(dragId.replace("temp-", ""));
+          pinOpenTab(tabId, pinnedTabs.length);
+        } else {
+          const pinnedId = dragId.replace("pinned-", "");
+          reorderPinnedTab(pinnedId, null, "after");
         }
       } else {
-        // Dragging a pinned tab into Temp zone -> Unpin it
-        if (!id.startsWith("temp-")) {
-          const cleanId = id.replace("pinned-", "");
-          unpinTab(cleanId);
+        // Append to end of Temporary section
+        if (!dragId.startsWith("temp-")) {
+          const pinnedId = dragId.replace("pinned-", "");
+          unpinTab(pinnedId, openTabs.length);
+        } else {
+          const tabId = parseInt(dragId.replace("temp-", ""));
+          chrome.tabs.move(tabId, { index: -1 });
         }
       }
     });
   });
-  
+
+  // Delegate drop listeners to dynamic tab rows
+  document.addEventListener("drop", (e) => {
+    const targetRow = e.target.closest(".tab-row");
+    if (!targetRow) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dragId = e.dataTransfer.getData("text/plain");
+    if (!dragId) return;
+    
+    const isDragBefore = targetRow.classList.contains("drag-before");
+    const relativePosition = isDragBefore ? "before" : "after";
+    
+    clearDragClasses();
+
+    const isTargetPinned = targetRow.id.startsWith("pinned-");
+    const targetId = targetRow.id.replace("pinned-", "").replace("temp-", "");
+
+    if (isTargetPinned) {
+      // Target is in the Pinned section
+      if (dragId.startsWith("temp-")) {
+        // Cross-section Temp -> Pinned drop at precise position
+        const tabId = parseInt(dragId.replace("temp-", ""));
+        pinOpenTabAtPosition(tabId, targetId, relativePosition);
+      } else {
+        // Pinned -> Pinned reorder at precise position
+        const pinnedId = dragId.replace("pinned-", "");
+        reorderPinnedTab(pinnedId, targetId, relativePosition);
+      }
+    } else {
+      // Target is in the Temp section
+      const targetTabId = parseInt(targetId);
+      if (!dragId.startsWith("temp-")) {
+        // Cross-section Pinned -> Temp drop at precise position
+        const pinnedId = dragId.replace("pinned-", "");
+        unpinTabAtPosition(pinnedId, targetTabId, relativePosition);
+      } else {
+        // Temp -> Temp reorder at precise position
+        const tabId = parseInt(dragId.replace("temp-", ""));
+        reorderTempTab(tabId, targetTabId, relativePosition);
+      }
+    }
+  });
+
   // Document-level safety net to clean up any stuck drag states
   document.addEventListener("dragend", () => {
     clearDragClasses();
@@ -366,7 +418,7 @@ function setupDragAndDrop() {
 }
 
 // Pin an active temporary tab
-function pinOpenTab(tabId) {
+function pinOpenTab(tabId, orderIndex) {
   const tab = openTabs.find(o => o.id === tabId);
   if (!tab) return;
   
@@ -377,12 +429,15 @@ function pinOpenTab(tabId) {
     title: tab.title,
     activeTitle: null,
     favIconUrl: tab.favIconUrl,
-    order: pinnedTabs.length
+    order: orderIndex !== undefined ? orderIndex : pinnedTabs.length
   };
   
   pinnedTabs.push(newPinned);
+  // Sort and re-index
+  pinnedTabs.sort((a, b) => a.order - b.order);
+  pinnedTabs.forEach((t, i) => { t.order = i; });
+
   chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
-    // Map the active open tabId to the new pinned tab's ID
     chrome.runtime.sendMessage({
       action: "mapActiveTab",
       tabId: tabId,
@@ -393,19 +448,169 @@ function pinOpenTab(tabId) {
   });
 }
 
-// Unpin a tab (moving it below the divider, making it temporary)
-function unpinTab(pinnedTabId) {
+// Unpin a tab
+function unpinTab(pinnedTabId, targetIndex) {
   const index = pinnedTabs.findIndex(t => t.id === pinnedTabId);
   if (index === -1) return;
   
   pinnedTabs.splice(index, 1);
+  pinnedTabs.forEach((t, i) => { t.order = i; });
+
+  chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
+    chrome.runtime.sendMessage({
+      action: "unmapActiveTab",
+      pinnedTabId: pinnedTabId
+    }, () => {
+      if (targetIndex !== undefined) {
+        let mappedTabId = null;
+        for (const [tId, pId] of Object.entries(activePinnedMap)) {
+          if (pId === pinnedTabId) {
+            mappedTabId = parseInt(tId);
+            break;
+          }
+        }
+        if (mappedTabId) {
+          chrome.tabs.move(mappedTabId, { index: targetIndex }, () => {
+            syncOpenTabs();
+          });
+          return;
+        }
+      }
+      syncOpenTabs();
+    });
+  });
+}
+
+// Reorder within Pinned section
+function reorderPinnedTab(draggedId, targetId, position) {
+  const draggedIndex = pinnedTabs.findIndex(t => t.id === draggedId);
+  if (draggedIndex === -1) return;
+
+  const draggedTab = pinnedTabs[draggedIndex];
+  pinnedTabs.splice(draggedIndex, 1);
+
+  let targetIndex = pinnedTabs.length;
+  if (targetId) {
+    const idx = pinnedTabs.findIndex(t => t.id === targetId);
+    if (idx !== -1) {
+      targetIndex = position === "before" ? idx : idx + 1;
+    }
+  }
+
+  pinnedTabs.splice(targetIndex, 0, draggedTab);
+
+  // Reassign order
+  pinnedTabs.forEach((tab, index) => {
+    tab.order = index;
+  });
+
+  chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
+    syncOpenTabs();
+  });
+}
+
+// Pin open tab at precise position
+function pinOpenTabAtPosition(tabId, targetPinnedId, position) {
+  const tab = openTabs.find(o => o.id === tabId);
+  if (!tab) return;
+
+  let targetIndex = pinnedTabs.length;
+  const idx = pinnedTabs.findIndex(t => t.id === targetPinnedId);
+  if (idx !== -1) {
+    targetIndex = position === "before" ? idx : idx + 1;
+  }
+
+  const newPinned = {
+    id: Date.now().toString(),
+    pinnedUrl: tab.url,
+    activeUrl: null,
+    title: tab.title,
+    activeTitle: null,
+    favIconUrl: tab.favIconUrl,
+    order: targetIndex
+  };
+
+  pinnedTabs.splice(targetIndex, 0, newPinned);
+
+  // Reassign orders
+  pinnedTabs.forEach((t, i) => {
+    t.order = i;
+  });
+
+  chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
+    chrome.runtime.sendMessage({
+      action: "mapActiveTab",
+      tabId: tabId,
+      pinnedTabId: newPinned.id
+    }, () => {
+      syncOpenTabs();
+    });
+  });
+}
+
+// Reorder within Temporary section
+function reorderTempTab(draggedTabId, targetTabId, position) {
+  chrome.tabs.get(targetTabId, (targetTab) => {
+    if (chrome.runtime.lastError || !targetTab) return;
+
+    let targetIndex = targetTab.index;
+    if (position === "after") {
+      targetIndex += 1;
+    }
+
+    chrome.tabs.move(draggedTabId, { index: targetIndex }, () => {
+      syncOpenTabs();
+    });
+  });
+}
+
+// Unpin a tab and drop it at a precise temporary tab position
+function unpinTabAtPosition(pinnedTabId, targetTabId, position) {
+  const index = pinnedTabs.findIndex(t => t.id === pinnedTabId);
+  if (index === -1) return;
+
+  pinnedTabs.splice(index, 1);
+  
+  // Recalculate orders of remaining pinned tabs
+  pinnedTabs.forEach((t, i) => {
+    t.order = i;
+  });
+
   chrome.storage.local.set({ pinned_tabs: pinnedTabs }, () => {
     // Notify background worker to unmap active tabs
     chrome.runtime.sendMessage({
       action: "unmapActiveTab",
       pinnedTabId: pinnedTabId
     }, () => {
-      syncOpenTabs();
+      // Now physically move the open tab to the target position
+      chrome.tabs.get(targetTabId, (targetTab) => {
+        if (chrome.runtime.lastError || !targetTab) {
+          syncOpenTabs();
+          return;
+        }
+
+        let targetIndex = targetTab.index;
+        if (position === "after") {
+          targetIndex += 1;
+        }
+
+        // We need to find the actual tab ID that was mapped to the pinned tab
+        let mappedTabId = null;
+        for (const [tId, pId] of Object.entries(activePinnedMap)) {
+          if (pId === pinnedTabId) {
+            mappedTabId = parseInt(tId);
+            break;
+          }
+        }
+
+        if (mappedTabId) {
+          chrome.tabs.move(mappedTabId, { index: targetIndex }, () => {
+            syncOpenTabs();
+          });
+        } else {
+          syncOpenTabs();
+        }
+      });
     });
   });
 }
