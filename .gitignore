@@ -7,3 +7,6 @@ scratch/
 .superpowers/
 
 .antigravitycli/
+test-results/
+playwright-report/
+
