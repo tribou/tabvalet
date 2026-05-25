@@ -15,6 +15,7 @@ This document summarizes the changes, verification steps, and manual testing res
 ### Interactive Reordering Logic (`sidepanel.js`)
 * **Opaque Ghost Optimization**: Delayed adding the `.dragging` class using a zero-delay `setTimeout` in the `dragstart` handler, guaranteeing the browser captures a crisp, fully opaque native drag ghost image.
 * **Coordinate calculations**: Computed exact cursor coordinates (`clientY - rect.top`) to dynamically toggle `.drag-before` (upper 50%) and `.drag-after` (lower 50%) boundary lines.
+* **Single Line Guarantee**: Added a clean-up sweep on each `dragover` to clear active drag classes on all other rows. This completely resolves the overlapping double-line visual glitch when hovering directly between two tabs, guaranteeing only a single precise border is active at any time.
 * **Self-hover guard**: Prevented showing indicator lines on the active dragged row itself using `if (row.classList.contains("dragging")) return;`.
 * **Bubbling and Safety Guards**:
   - Prevented event-bubbling conflicts using `if (e.target.closest(".tab-row")) return;` in section drop listeners.
