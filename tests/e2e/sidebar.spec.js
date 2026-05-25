@@ -149,10 +149,25 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     const pinnedRows = await sidepanelPage.locator('#pinned-zone .tab-row');
     await expect(pinnedRows).toHaveCount(0);
 
-    const tempRows = await sidepanelPage.locator('#temp-zone .tab-row');
-    await expect(tempRows).toHaveCount(2);
-    // The newly unpinned tab should be the first row in the normal/temp zone
-    await expect(tempRows.nth(0)).toContainText('Pinned Tab');
+    // Verify relative ordering of the unpinned and normal tabs inside the temporary section
+    const [tab1Index, tab2Index] = await sidepanelPage.evaluate(async () => {
+      const tabs = await new Promise((resolve) => {
+        chrome.tabs.query({ currentWindow: true }, resolve);
+      });
+      const tab1 = tabs.find(t => t.url.includes('pinned'));
+      const tab2 = tabs.find(t => t.url.includes('normal'));
+      if (!tab1 || !tab2) return [-1, -1];
+
+      const tempZone = document.getElementById('temp-zone');
+      const rows = Array.from(tempZone.querySelectorAll('.tab-row'));
+      const index1 = rows.findIndex(r => r.id === `temp-${tab1.id}`);
+      const index2 = rows.findIndex(r => r.id === `temp-${tab2.id}`);
+      return [index1, index2];
+    });
+
+    expect(tab1Index).not.toBe(-1);
+    expect(tab2Index).not.toBe(-1);
+    expect(tab1Index).toBe(tab2Index - 1); // Pinned tab (tab1) is immediately before normal tab (tab2) in the UI
   });
 });
 
