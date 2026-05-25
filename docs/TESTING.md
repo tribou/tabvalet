@@ -11,15 +11,15 @@ This document establishes the testing architecture, command references, and mand
 The codebase implements a **hybrid testing strategy** that balances fast unit tests with high-fidelity, real-browser integration tests.
 
 ### 1.1 Fast Unit Testing (Vitest & JSDOM)
-- **Files**: Found under [tests/unit/](file:///Users/tribou/dev/joyful-pascal/tests/unit) (e.g. `url.test.js`, `tab-manager.test.js`).
+- **Files**: Found under [tests/unit/](../tests/unit) (e.g. `url.test.js`, `tab-manager.test.js`).
 - **Engine**: **Vitest** configured to run in a `jsdom` sandbox environment.
-- **Chrome Mocking**: Uses `jest-chrome` and custom Vitest stubs loaded in [tests/setup.js](file:///Users/tribou/dev/joyful-pascal/tests/setup.js). This ensures `chrome.*` API calls do not throw undefined reference errors when running inside a Node.js process.
+- **Chrome Mocking**: Uses `jest-chrome` and custom Vitest stubs loaded in [tests/setup.js](../tests/setup.js). This ensures `chrome.*` API calls do not throw undefined reference errors when running inside a Node.js process.
 - **Usage**: Testing pure calculations, URL parsing, mapping transitions, and algorithmic states.
 
 ### 1.2 End-to-End Integration Testing (Playwright)
-- **Files**: Found under [tests/e2e/](file:///Users/tribou/dev/joyful-pascal/tests/e2e) (e.g., `sidebar.spec.js`, `fixtures.js`).
+- **Files**: Found under [tests/e2e/](../tests/e2e) (e.g., `sidebar.spec.js`, `fixtures.js`).
 - **Engine**: **Playwright** driving a real headful instance of Google Chromium.
-- **Extension Loading**: Uses custom page/context fixtures ([tests/e2e/fixtures.js](file:///Users/tribou/dev/joyful-pascal/tests/e2e/fixtures.js)) that inject the unpacked extension folder using standard Chrome flags (`--disable-extensions-except` and `--load-extension`).
+- **Extension Loading**: Uses custom page/context fixtures ([tests/e2e/fixtures.js](../tests/e2e/fixtures.js)) that inject the unpacked extension folder using standard Chrome flags (`--disable-extensions-except` and `--load-extension`).
 - **Usage**: Verifying full-fidelity sidebar interactions, DOM updates, drag-and-drop actions, service worker background event bindings, and session/local storage synchronizations.
 
 ---
