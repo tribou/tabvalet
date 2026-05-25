@@ -62,6 +62,23 @@
       background: transparent;
     }
 
+    /* Empty pinned zone drop line */
+    #pinned-zone.drag-over-empty {
+      position: relative;
+    }
+    #pinned-zone.drag-over-empty::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      z-index: 10;
+      box-shadow: 0 0 4px var(--accent);
+    }
+
     /* Section Container */
     .section-container {
       display: flex;

@@ -315,6 +315,21 @@ function setupDragAndDrop() {
 
     section.addEventListener("dragover", (e) => {
       e.preventDefault();
+      if (isPinned && pinnedTabs.length === 0) {
+        const pinnedZone = document.getElementById("pinned-zone");
+        if (pinnedZone) {
+          pinnedZone.classList.add("drag-over-empty");
+        }
+      }
+    });
+
+    section.addEventListener("dragleave", () => {
+      if (isPinned && pinnedTabs.length === 0) {
+        const pinnedZone = document.getElementById("pinned-zone");
+        if (pinnedZone) {
+          pinnedZone.classList.remove("drag-over-empty");
+        }
+      }
     });
 
     section.addEventListener("drop", (e) => {
@@ -642,6 +657,10 @@ function clearDragClasses() {
   document.querySelectorAll(".tab-row").forEach(el => {
     el.classList.remove("dragging", "drag-before", "drag-after");
   });
+  const pinnedZone = document.getElementById("pinned-zone");
+  if (pinnedZone) {
+    pinnedZone.classList.remove("drag-over-empty");
+  }
 }
 
 // Expose functions on the global window object for E2E tests

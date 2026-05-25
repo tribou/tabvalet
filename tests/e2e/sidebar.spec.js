@@ -72,4 +72,23 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     expect(storageState[1].id).toBe('pin-1');
     expect(storageState[1].order).toBe(1);
   });
+
+  test('displays drag-over-empty class when dragging a tab over empty pinned section', async ({ sidepanelPage }) => {
+    const pinnedZone = await sidepanelPage.locator('#pinned-zone');
+    await expect(pinnedZone).toBeEmpty();
+    await expect(pinnedZone).not.toHaveClass(/drag-over-empty/);
+
+    // 1. Dispatch dragover on #pinned-section
+    await sidepanelPage.dispatchEvent('#pinned-section', 'dragover');
+
+    // 2. Verify the drag-over-empty class is present
+    await expect(pinnedZone).toHaveClass(/drag-over-empty/);
+
+    // 3. Dispatch dragleave on #pinned-section
+    await sidepanelPage.dispatchEvent('#pinned-section', 'dragleave');
+
+    // 4. Verify class is removed
+    await expect(pinnedZone).not.toHaveClass(/drag-over-empty/);
+  });
 });
+
