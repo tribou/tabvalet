@@ -42,9 +42,17 @@ To load the extension locally for development:
 
 This project prioritizes high performance and simplicity. It uses **Vanilla JS (ES Modules)** and **Vanilla CSS** with no build steps or bundlers to keep the extension lightweight.
 
+### Setting Up Your Dev Environment
+
+If you want to run the automated tests or contribute to the project, you must first install the development dependencies:
+
+```bash
+npm install
+```
+
 ### Available Scripts
 
-Run these commands in the terminal from the project root:
+Once dependencies are installed, you can run these commands in the terminal from the project root:
 
 ```bash
 # Run unit and logic tests via Vitest
