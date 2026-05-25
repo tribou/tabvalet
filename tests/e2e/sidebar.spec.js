@@ -33,4 +33,43 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
     });
     expect(areFunctionsExposed).toBe(true);
   });
+
+  test('reorders pinned tabs and persists order in local storage', async ({ sidepanelPage }) => {
+    // 1. Setup two pinned tabs in local storage
+    await sidepanelPage.evaluate(async () => {
+      await chrome.storage.local.set({
+        pinned_tabs: [
+          { id: 'pin-1', pinnedUrl: 'https://github.com', title: 'GitHub', order: 0 },
+          { id: 'pin-2', pinnedUrl: 'https://google.com', title: 'Google', order: 1 }
+        ]
+      });
+    });
+
+    await sidepanelPage.reload();
+
+    // 2. Verify initial UI order in pinned zone
+    const pinnedRows = await sidepanelPage.locator('#pinned-zone .tab-row');
+    await expect(pinnedRows.nth(0)).toContainText('GitHub');
+    await expect(pinnedRows.nth(1)).toContainText('Google');
+
+    // 3. Trigger reorder programmatically via exposed reorderPinnedTab API
+    await sidepanelPage.evaluate(() => {
+      window.reorderPinnedTab('pin-1', 'pin-2', 'after');
+    });
+
+    // 4. Verify updated UI order
+    await expect(pinnedRows.nth(0)).toContainText('Google');
+    await expect(pinnedRows.nth(1)).toContainText('GitHub');
+
+    // 5. Verify local storage updated correctly
+    const storageState = await sidepanelPage.evaluate(async () => {
+      const data = await chrome.storage.local.get(['pinned_tabs']);
+      return data.pinned_tabs;
+    });
+
+    expect(storageState[0].id).toBe('pin-2');
+    expect(storageState[0].order).toBe(0);
+    expect(storageState[1].id).toBe('pin-1');
+    expect(storageState[1].order).toBe(1);
+  });
 });
