@@ -24,6 +24,9 @@ To provide smooth, native-feeling feedback during drag operations, we define cla
 
 Both insertion borders are rendered using CSS absolute pseudo-elements (with glowing box shadows) to prevent DOM reflow and layout jitter.
 
+> [!NOTE]
+> The legacy section hover highlight (`.section-container.drag-over` background color change) is removed to avoid distracting background flashes, keeping the interface clean and letting the target insertion lines serve as the exclusive spatial drop indicator.
+
 ```css
 .tab-row.dragging {
   opacity: 0.4;
