@@ -137,6 +137,22 @@ test.describe('Vertical Tabs Sidebar Extension UI', () => {
       'https://example.com/pinned',
       'https://example.com/normal'
     ]);
+
+    // 4. Verify local storage has no pinned tabs
+    const storageState = await sidepanelPage.evaluate(async () => {
+      const data = await chrome.storage.local.get(['pinned_tabs']);
+      return data.pinned_tabs;
+    });
+    expect(storageState).toEqual([]);
+
+    // 5. Verify the sidebar UI DOM states
+    const pinnedRows = await sidepanelPage.locator('#pinned-zone .tab-row');
+    await expect(pinnedRows).toHaveCount(0);
+
+    const tempRows = await sidepanelPage.locator('#temp-zone .tab-row');
+    await expect(tempRows).toHaveCount(2);
+    // The newly unpinned tab should be the first row in the normal/temp zone
+    await expect(tempRows.nth(0)).toContainText('Pinned Tab');
   });
 });
 
