@@ -17,7 +17,7 @@ No active user review blocks remain. We have aligned on:
 
 ### Docker and Scripts Integration
 
-#### [MODIFY] [package.json](file:///Users/tribou/dev/joyful-pascal/package.json)
+#### [MODIFY] [package.json](../../../package.json)
 We will update the `test:e2e` command to invoke Playwright inside the official Linux container using a virtual framebuffer (`xvfb-run`). The host-only E2E UI mode `test:e2e:ui` remains native for rapid debugging.
 
 ```json
@@ -33,7 +33,7 @@ We will update the `test:e2e` command to invoke Playwright inside the official L
 
 ### E2E Visual Testing Specification
 
-#### [NEW] [visual.spec.js](file:///Users/tribou/dev/joyful-pascal/tests/e2e/visual.spec.js)
+#### [NEW] [visual.spec.js](../../../tests/e2e/visual.spec.js)
 A dedicated E2E visual verification suite that captures three high-impact design states. It contains environmental isolation checks to only execute screenshots when running under Linux (Docker).
 
 ```js
