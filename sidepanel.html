@@ -62,7 +62,7 @@
       background: transparent;
     }
 
-    /* Section Container and Drop Target */
+    /* Section Container */
     .section-container {
       display: flex;
       flex-direction: column;
@@ -71,11 +71,44 @@
       margin: 4px 2px;
       padding-bottom: 6px;
     }
-    .section-container.drag-over {
-      background: rgba(10, 132, 255, 0.08);
+
+    /* Reduced opacity for the row currently being dragged */
+    .tab-row.dragging {
+      opacity: 0.4;
     }
-    .section-container.drag-over .section-header {
-      color: var(--accent);
+
+    /* Target insertion line above the row */
+    .tab-row.drag-before {
+      position: relative;
+    }
+    .tab-row.drag-before::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      z-index: 10;
+      box-shadow: 0 0 4px var(--accent);
+    }
+
+    /* Target insertion line below the row */
+    .tab-row.drag-after {
+      position: relative;
+    }
+    .tab-row.drag-after::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 4px;
+      right: 4px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+      z-index: 10;
+      box-shadow: 0 0 4px var(--accent);
     }
 
     /* Tab row styling */
