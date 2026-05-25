@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Arc Vertical Tabs Sidebar",
+  "name": "TabValet: Pinned Vertical Tabs",
   "version": "1.0.0",
-  "description": "Arc-like vertical tabs sidebar in Google Chrome side panel.",
+  "description": "A premium vertical tab manager and pinned bookmark sidebar inside the Google Chrome side panel.",
   "permissions": [
     "sidePanel",
     "storage",

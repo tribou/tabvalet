@@ -2,7 +2,7 @@
 
 # Development Guidelines
 
-This document outlines the coding style, structural design principles, naming conventions, and reliability strategies for developing features in the **Arc Vertical Tabs Sidebar** codebase.
+This document outlines the coding style, structural design principles, naming conventions, and reliability strategies for developing features in the **TabValet** codebase.
 
 ---
 
@@ -46,7 +46,7 @@ We do not use TailwindCSS or CSS preprocessors. The visual interface is hand-cra
 
 ### Interactive Details:
 - All interactive controls (close buttons, action buttons) must be completely hidden or low-opacity by default, transitioning to active/visible smoothly upon hover (`transition: opacity 0.15s ease`).
-- Click targets for favicon-capsule resets must extend to the full height of the tab row and be flush-left to mimic Arc's native sidepanel UX.
+- Click targets for favicon-capsule resets must extend to the full height of the tab row and be flush-left to mimic premium sidepanel UX.
 
 ---
 

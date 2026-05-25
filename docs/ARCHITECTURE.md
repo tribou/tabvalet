@@ -2,7 +2,7 @@
 
 # Architecture Specification
 
-This document details the software architecture, execution contexts, database schemas, and message passing protocols for the **Arc Vertical Tabs Sidebar** Chrome Extension.
+This document details the software architecture, execution contexts, database schemas, and message passing protocols for the **TabValet: Pinned Vertical Tabs** Chrome Extension.
 
 ---
 
@@ -99,7 +99,7 @@ Communication between the Sidepanel UI and Background Worker is standardized thr
 3. **If mapped**: Switches focus to that tab using `chrome.tabs.update(tabId, { active: true })`.
 4. **If NOT mapped**: Opens a new tab pointing to `activeUrl || pinnedUrl`, receives the new `tabId`, and sends a `"mapActiveTab"` message to the background worker to bind the new `tabId` to the `pinnedTabId`.
 
-#### B. Navigating Pinned Tabs (Arc "/" Separator State)
+#### B. Navigating Pinned Tabs (Hybrid "/" Separator State)
 1. User navigates to a new page inside a mapped browser tab.
 2. `background.js` listens via `chrome.tabs.onUpdated`.
 3. If the tab's new URL differs from its mapped `pinnedUrl` (excluding fragment/hash hashes):

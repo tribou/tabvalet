@@ -213,12 +213,12 @@ function renderPinnedTabs() {
   });
 }
 
-// Render Temporary Tabs
+// Render Normal Tabs
 function renderTemporaryTabs() {
   const container = document.getElementById("temp-zone");
   container.innerHTML = "";
 
-  // Get active mapped open tabs so we don't show pinned tabs in temporary section
+  // Get active mapped open tabs so we don't show pinned tabs in normal section
   const mappedTabIds = Object.keys(activePinnedMap).map(id => parseInt(id));
   
   const tempTabs = openTabs.filter(tab => !mappedTabIds.includes(tab.id));
@@ -285,7 +285,7 @@ function renderTemporaryTabs() {
 
     const titleSpan = document.createElement("span");
     titleSpan.className = "tab-title";
-    titleSpan.innerText = tab.title || "Temporary Tab";
+    titleSpan.innerText = tab.title || "Normal Tab";
     info.appendChild(titleSpan);
     row.appendChild(info);
 
@@ -339,7 +339,7 @@ function setupDragAndDrop() {
           reorderPinnedTab(pinnedId, null, "after");
         }
       } else {
-        // Append to end of Temporary section
+        // Append to end of Normal section
         if (!dragId.startsWith("temp-")) {
           const pinnedId = dragId.replace("pinned-", "");
           unpinTab(pinnedId, openTabs.length);
@@ -402,7 +402,7 @@ function setupDragAndDrop() {
   });
 }
 
-// Pin an active temporary tab
+// Pin an active normal tab
 function pinOpenTab(tabId, orderIndex) {
   const tab = openTabs.find(o => o.id === tabId);
   if (!tab) return;
@@ -521,7 +521,7 @@ function pinOpenTabAtPosition(tabId, targetPinnedId, position) {
   });
 }
 
-// Reorder within Temporary section
+// Reorder within Normal section
 function reorderTempTab(draggedTabId, targetTabId, position) {
   const draggedTab = openTabs.find(t => t.id === draggedTabId);
   const targetTab = openTabs.find(t => t.id === targetTabId);
@@ -536,7 +536,7 @@ function reorderTempTab(draggedTabId, targetTabId, position) {
   });
 }
 
-// Unpin a tab and drop it at a precise temporary tab position
+// Unpin a tab and drop it at a precise normal tab position
 function unpinTabAtPosition(pinnedTabId, targetTabId, position) {
   const index = pinnedTabs.findIndex(t => t.id === pinnedTabId);
   if (index === -1) return;

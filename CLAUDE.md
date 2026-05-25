@@ -1,8 +1,8 @@
 *Global rules, command reference, and index to all project context — the only file AI agents need to open first*
 
-# Arc Vertical Tabs Sidebar Context
+# TabValet Context
 
-Welcome to the **Arc Vertical Tabs Sidebar** (Arc-lite) Chrome Extension repository. This extension replicates the premium pinned/temporary divider, drag-to-pin, and navigated `/` separator reset behaviors of the Arc Browser inside a native Google Chrome side panel.
+Welcome to the **TabValet: Pinned Vertical Tabs** Chrome Extension repository. This extension replicates premium pinned/normal divider, drag-to-pin, and navigated `/` separator reset behaviors (reminiscent of the Arc Browser layout) inside a native Google Chrome side panel.
 
 ---
 

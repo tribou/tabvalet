@@ -2,7 +2,7 @@
 
 # Security Posture
 
-This document details the security model, permission scoping, data privacy boundaries, and secrets policy for the **Arc Vertical Tabs Sidebar** Chrome Extension.
+This document details the security model, permission scoping, data privacy boundaries, and secrets policy for the **TabValet: Pinned Vertical Tabs** Chrome Extension.
 
 ---
 
