@@ -9,7 +9,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test -c tests/playwright.config.js",
+    "test:e2e": "docker run --rm --init -v $(pwd):/work -w /work --ipc=host mcr.microsoft.com/playwright:v1.60.0-noble xvfb-run npx playwright test -c tests/playwright.config.js",
     "test:e2e:ui": "playwright test -c tests/playwright.config.js --ui"
   },
   "keywords": [],
