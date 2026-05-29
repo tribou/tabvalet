@@ -33,7 +33,7 @@ To load the extension locally for development:
 2. Open Google Chrome and navigate to `chrome://extensions/`.
 3. In the top-right corner, toggle **Developer mode** on.
 4. In the top-left corner, click **Load unpacked**.
-5. Select the repository root folder (`joyful-pascal` / `sidebar-extension`).
+5. Select the repository root folder (`tabvalet`).
 6. Click the Extensions icon (🧩) in the Chrome toolbar and click the **TabValet** icon (or open the Side Panel using the browser UI) to start.
 
 ---

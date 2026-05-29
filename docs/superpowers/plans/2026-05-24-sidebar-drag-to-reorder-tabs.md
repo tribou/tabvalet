@@ -509,7 +509,7 @@
 - [ ] **Step 1: Load and test the extension manually**
   1. Open Chrome and navigate to `chrome://extensions/`.
   2. Turn on "Developer mode" in the top right.
-  3. Click "Load unpacked" and select the project folder `/Users/tribou/dev/joyful-pascal`.
+  3. Click "Load unpacked" and select the project folder `~/dev/tabvalet`.
   4. Pin the extension and click the extension icon to open the Sidebar panel.
   5. Drag Pinned tabs up and down. Verify that a beautiful Target Insertion Line follows the cursor, and dropping them updates their sequence permanently (survives sidebar closes/reopens).
   6. Drag Temporary tabs up and down. Verify that dragging moves the actual Chrome browser tab index in the browser.

@@ -119,7 +119,7 @@ Communication between the Sidepanel UI and Background Worker is standardized thr
 ## 5. Repository Directory Layout
 
 ```
-joyful-pascal/
+tabvalet/
 ├── CLAUDE.md                 # Root: Global rules, CLI commands, and index
 ├── AGENTS.md                 # Root: Pointer redirecting to CLAUDE.md
 │

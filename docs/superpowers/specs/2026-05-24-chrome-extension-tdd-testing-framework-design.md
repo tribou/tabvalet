@@ -22,7 +22,7 @@ This design document outlines the architecture, tooling, and workflow for introd
 To introduce this framework, we will establish dedicated namespaces for production logic (`src/`) and testing suites (`tests/`):
 
 ```
-joyful-pascal/
+tabvalet/
 ├── package.json
 ├── manifest.json              # Updated: background worker type="module"
 ├── sidepanel.html             # Updated: script type="module"

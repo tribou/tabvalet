@@ -18,7 +18,7 @@ This document summarizes the testing architecture, refactoring, and verification
 
 ## 2. Unit Testing Suite (Vitest)
 
-We added 8 comprehensive unit tests to [tests/unit/tab-manager.test.js](file:///Users/tribou/dev/joyful-pascal/tests/unit/tab-manager.test.js):
+We added 8 comprehensive unit tests to [tests/unit/tab-manager.test.js](../../tests/unit/tab-manager.test.js):
 1. **`reorderPinnedTabsList`**:
    - Returns a fresh array copy if `draggedId === targetId`.
    - Returns a fresh array copy if `draggedId` is not found in the list.
@@ -36,7 +36,7 @@ We added 8 comprehensive unit tests to [tests/unit/tab-manager.test.js](file:///
 
 ## 3. End-to-End Integration Testing Suite (Playwright)
 
-We added 2 integration tests to [tests/e2e/sidebar.spec.js](file:///Users/tribou/dev/joyful-pascal/tests/e2e/sidebar.spec.js):
+We added 2 integration tests to [tests/e2e/sidebar.spec.js](../../tests/e2e/sidebar.spec.js):
 1. **Window Exposure Verification**: Confirms that both reordering handler APIs (`window.reorderPinnedTab` and `window.reorderTempTab`) are successfully and cleanly exposed on the sidebar's window context.
 2. **Storage and UI Persistence Sync**: Sets up mock pinned tabs in Chrome's local storage context, programmatically triggers the reordering functions, and verifies that:
    - The DOM elements inside the sidebar reorder dynamically to match.
